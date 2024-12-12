@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rpi Notify Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+</head>
+<body>
+    <div class="header">
+        <h1>Notification Server Dashboard</h1>
+        <div class="status">Server Status: <span id="serverStatus">Online</span></div>
+    </div>
+
+    <div class="container">
+        <!-- Test Message Panel -->
+        <div class="panel test-message-panel">
+            <div class="panel-header">Test Message</div>
+            <input type="text" id="testMessage" class="message-input" placeholder="Enter test message...">
+            <button onclick="sendTestMessage()" class="button">Send Message</button>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="panel">
+            <div class="panel-header">System Stats</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="activeConnections">0</div>
+                    <div class="stat-label">Active Connections</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="messagesSent">0</div>
+                    <div class="stat-label">Messages Sent</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="uptime">0:00:00</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Connected Devices Panel -->
+        <div class="panel">
+            <div class="panel-header">Connected Devices</div>
+            <div id="deviceList">
+                <!-- Devices will be populated here -->
+            </div>
+        </div>
+
+        <!-- Message Log Panel -->
+<div class="panel">
+    <div class="panel-header">
+        Message Log
+        <button onclick="clearLog()" class="button clear-log-btn">Clear Log</button>
+    </div>
+    <div class="log-container" id="logList">
+        <!-- Logs will be populated here -->
+    </div>
+</div>
+
+    <script>
+        // Update dashboard data
+        function updateDashboard() {
+            // Update connected devices
+            fetch('/api/devices')
+                .then(response => response.json())
+                .then(devices => {
+                    const deviceList = document.getElementById('deviceList');
+                    deviceList.innerHTML = '';
+                    for (const [id, device] of Object.entries(devices)) {
+                        deviceList.innerHTML += `
+                            <div class="device-card">
+                                <div class="device-name">${device.name}</div>
+                                <div class="device-stats">
+                                    <div>ID: ${id}</div>
+                                    <div>Connected: ${device.connected_since}</div>
+                                    <div>Last Ping: ${device.last_ping}ms</div>
+                                    <div>Status: ${device.status}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            
+            // Update message logs
+            fetch('/api/logs')
+                .then(response => response.json())
+                .then(logs => {
+                    const logList = document.getElementById('logList');
+                    logList.innerHTML = '';
+                    logs.forEach(log => {
+                        logList.innerHTML += `
+                            <div class="log-entry">
+                                <span class="timestamp">[${new Date(log.timestamp).toLocaleString()}]</span>
+                                <div class="message">${log.message}</div>
+                            </div>
+                        `;
+                    });
+                    // Auto-scroll to bottom
+                    logList.scrollTop = logList.scrollHeight;
+                });
+
+            // Update system stats
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(stats => {
+                    document.getElementById('activeConnections').textContent = stats.active_connections;
+                    document.getElementById('messagesSent').textContent = stats.messages_sent;
+                    document.getElementById('uptime').textContent = stats.uptime;
+                    document.getElementById('queueSize').textContent = stats.queue_size;
+                    document.getElementById('serverStatus').textContent = stats.status;
+                });
+        }
+
+        // Send test message
+function sendTestMessage() {
+    const message = document.getElementById('testMessage').value;
+    if (!message) return;
+
+    // Disable the button temporarily to prevent multiple sends
+    const sendButton = document.querySelector('.test-message-panel button');
+    sendButton.disabled = true;
+
+    fetch('/api/test-message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+    }).then(() => {
+        document.getElementById('testMessage').value = '';
+        // Wait a bit before updating to allow server to process
+        setTimeout(updateDashboard, 1000);
+        sendButton.disabled = false;
+    });
+}
+        // Handle enter key in message input
+        document.getElementById('testMessage').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendTestMessage();
+            }
+        });
+
+        // Initial update and set interval
+        updateDashboard();
+        setInterval(updateDashboard, 5000);
+
+        // Add connection status indicator
+        window.addEventListener('online', () => {
+            document.getElementById('serverStatus').textContent = 'Online';
+            document.getElementById('serverStatus').style.color = 'var(--cyber-text)';
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('serverStatus').textContent = 'Offline';
+            document.getElementById('serverStatus').style.color = 'var(--cyber-accent)';
+        });
+
+function clearLog() {
+    fetch('/api/logs/clear', {
+        method: 'POST'
+    }).then(() => {
+        const logList = document.getElementById('logList');
+        logList.innerHTML = '';
+    });
+}
+    </script>
+</body>
+</html>
