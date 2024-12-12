@@ -1,6 +1,6 @@
 # Rpi_Notify
 
-**Rpi_Notify** is a Python-based notification server designed to handle notifications via both TCP and UNIX socket connections. It also provides a lightweight web interface for monitoring and managing connected devices, logs, and server statistics.
+**Rpi_Notify** is a Android/Python-based notification server designed to handle notifications via both TCP and UNIX socket connections. It also provides a lightweight web interface for monitoring and managing connected devices, logs, and server statistics.
 
 ## Features
 - **Multi-protocol support**: Supports both TCP and UNIX sockets for communication.
@@ -10,3 +10,6 @@
 - **Message Logs**: Maintains a log of all received messages with timestamps.
 - **Server Statistics**: Provides information on active connections, uptime, and message count.
 - **Test Messaging**: Allows sending test messages through the web interface.
+This is a work in progress.
+
+APK file for client side.
